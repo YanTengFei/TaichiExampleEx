@@ -19,11 +19,12 @@ G = 1
 
 # number of planets
 N = 3000
+
 # unit mass
 m = 1
 
 # mouse ball mass
-m_mouse_ball = 100
+m_mouse_ball = 1000
 
 # galaxy size
 galaxy_size = 0.4
@@ -46,7 +47,6 @@ pos = ti.Vector.field(2, ti.f32, N)
 vel = ti.Vector.field(2, ti.f32, N)
 force = ti.Vector.field(2, ti.f32, N)
 
-
 @ti.kernel
 def initialize():
     center[None] = [0.5, 0.5]
@@ -59,14 +59,15 @@ def initialize():
         vel[i] = [-offset.y, offset.x]
         vel[i] *= init_vel
 
-
 @ti.kernel
 def compute_mouse_force():
     if mouse_drag[None] == True:
         for i in range(N):
             diff = pos[i] - mouse_pos[None]
             r = diff.norm(1e-5)
-            f = -G * m_mouse_ball * m * (1.0 / r)**3 * diff
+            # f = -G * m_mouse_ball * m * (1.0 / r)**3 * diff
+            # mouse force -(GMm * (r/2)) * (diff/r)
+            f = -G * m_mouse_ball * m * (r / 2) * (diff/r)
             force[i] += f
 
 @ti.kernel
@@ -89,7 +90,6 @@ def compute_force():
                 # assign to each particle
                 force[i] += f
 
-
 @ti.kernel
 def update():
     dt = h / substepping
@@ -97,7 +97,6 @@ def update():
         #symplectic euler
         vel[i] += dt * force[i] / m
         pos[i] += dt * vel[i]
-
 
 def main():
     gui = ti.GUI('N-body problem', (800, 800))
@@ -131,7 +130,6 @@ def main():
         if mouse_drag[None] == True:
             gui.circle(mouse_pos[None].to_numpy(),color = 0xED553B,radius=2)
         gui.show()
-
 
 if __name__ == '__main__':
     main()
